@@ -1,5 +1,5 @@
-const fs = require("fs"); 
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // const data_folder = "./data/";
 
@@ -7,36 +7,45 @@ const path = require('path');
 let posts = [];
 let categories = [];
 
+let postIdCounter = 30; // Initialize with the appropriate starting ID
 
 // Function to initialize data by reading JSON files
 function initialize() {
   return new Promise((resolve, reject) => {
     // Read posts.json file
-    fs.readFile(path.join(__dirname, 'data', 'posts.json'), 'utf8', (err, postData) => {
-      if (err) {
-        reject('Unable to read posts file');
-      } else {
-        try {
-          posts = JSON.parse(postData);
+    fs.readFile(
+      path.join(__dirname, "data", "posts.json"),
+      "utf8",
+      (err, postData) => {
+        if (err) {
+          reject("Unable to read posts file");
+        } else {
+          try {
+            posts = JSON.parse(postData);
 
-          // Read categories.json file after successfully reading posts.json
-          fs.readFile(path.join(__dirname, 'data', 'categories.json'), 'utf8', (err, categoryData) => {
-            if (err) {
-              reject('Unable to read categories file');
-            } else {
-              try {
-                categories = JSON.parse(categoryData);
-                resolve('Data initialization successful');
-              } catch (categoryError) {
-                reject('Error parsing categories JSON');
+            // Read categories.json file after successfully reading posts.json
+            fs.readFile(
+              path.join(__dirname, "data", "categories.json"),
+              "utf8",
+              (err, categoryData) => {
+                if (err) {
+                  reject("Unable to read categories file");
+                } else {
+                  try {
+                    categories = JSON.parse(categoryData);
+                    resolve("Data initialization successful");
+                  } catch (categoryError) {
+                    reject("Error parsing categories JSON");
+                  }
+                }
               }
-            }
-          });
-        } catch (postError) {
-          reject('Error parsing posts JSON');
+            );
+          } catch (postError) {
+            reject("Error parsing posts JSON");
+          }
         }
       }
-    });
+    );
   });
 }
 
@@ -44,7 +53,7 @@ function initialize() {
 function getAllPosts() {
   return new Promise((resolve, reject) => {
     if (posts.length === 0) {
-      reject('No results returned');
+      reject("No results returned");
     } else {
       resolve(posts);
     }
@@ -56,21 +65,63 @@ function getPublishedPosts() {
   return new Promise((resolve, reject) => {
     const publishedPosts = posts.filter((post) => post.published === true);
     if (publishedPosts.length === 0) {
-      reject('No published posts found');
+      reject("No published posts found");
     } else {
       resolve(publishedPosts);
     }
   });
 }
 
+function getPostsByCategory(category) {
+  // Retrieve posts by a specific category
+  const postsByCategory = posts.filter(post => post.category === category);
+  if (postsByCategory.length === 0) {
+    return Promise.reject("No results returned.");
+  }
+  return Promise.resolve(postsByCategory);
+}
+
+function getPostsByMinDate(minDateStr) {
+  // Retrieve posts by a minimum date
+  const postsByMinDate = posts.filter(post => new Date(post.postDate) >= new Date(minDateStr));
+  if (postsByMinDate.length === 0) {
+    return Promise.reject("No results returned.");
+  }
+  return Promise.resolve(postsByMinDate);
+}
+
+function getPostById(id) {
+  // Retrieve a post by its ID
+  const post = posts.find(post => post.id === id);
+  if (!post) {
+    return Promise.reject("No result returned.");
+  }
+  return Promise.resolve(post);
+}
+
 // Function to get all categories
 function getAllCategories() {
   return new Promise((resolve, reject) => {
     if (categories.length === 0) {
-      reject('No categories found');
+      reject("No categories found");
     } else {
       resolve(categories);
     }
+  });
+}
+
+function addPost(postData) {
+  return new Promise((resolve, reject) => {
+    // Set published to false if undefined, true otherwise
+    postData.published = postData.published === undefined ? false : true;
+
+    // Set the id property
+    postData.id = postIdCounter++;
+
+    // Push the updated PostData object
+    posts.push(postData);
+
+    resolve(postData);
   });
 }
 
@@ -79,5 +130,9 @@ module.exports = {
   initialize,
   getAllPosts,
   getPublishedPosts,
+  getPostsByCategory,
+  getPostsByMinDate,
+  getPostById,
   getAllCategories,
+  addPost,
 };
